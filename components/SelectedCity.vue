@@ -1,6 +1,6 @@
 <template>
   <div class="main_layout">
-    <div class="input_layout" :class="{expand:isexpand}">
+    <div class="input_layout" :class="{ expand: isexpand }">
       <a-tag
         color="#2db7f5"
         class="tag_item"
@@ -8,7 +8,8 @@
         v-for="item in checkedList"
         :key="item.name"
         @close.stop="tagClose(item)"
-      >{{item.name}}</a-tag>
+        >{{ item.name }}</a-tag
+      >
       <a-input
         id="inputitem"
         v-model="searchText"
@@ -19,28 +20,36 @@
         @change="search"
       />
     </div>
-    <div ref="tabs_layout" class="tabs_layout" tabindex="0" v-show="isexpand" @focusout="cityup">
+    <div
+      ref="tabs_layout"
+      class="tabs_layout"
+      tabindex="0"
+      v-show="isexpand"
+      @focusout="cityup"
+    >
       <!--这里是搜索界面-->
       <template v-if="searching">
         <div class="search_panel">
           <template v-if="multiple">
             <div class="search_checkbox_panel">
-            <a-checkbox
-              class="search_checkbox_item"
-              v-for="(item,tabIndex) in searchDatas"
-              :key="tabIndex"
-              :checked="item.checked"
-              @change.stop="checkBoxChanged({...item,$event})"
-            >{{item.name}}</a-checkbox>
+              <a-checkbox
+                class="search_checkbox_item"
+                v-for="(item, tabIndex) in searchDatas"
+                :key="tabIndex"
+                :checked="item.checked"
+                @change.stop="checkBoxChanged({ ...item, $event })"
+                >{{ item.name }}</a-checkbox
+              >
             </div>
           </template>
           <template v-else>
             <label
               class="search_label_item"
-              v-for="(item,index) in this.searchDatas"
+              v-for="(item, index) in this.searchDatas"
               :key="index"
               @click.stop="checkBoxChanged(item)"
-            >{{item.name}}</label>
+              >{{ item.name }}</label
+            >
           </template>
         </div>
       </template>
@@ -49,29 +58,38 @@
         <a-tabs ref="tab" class="tab" :default-active-key="0">
           <a-tab-pane
             class="tab_panel"
-            v-for="(item,tabIndex) in cityListKey"
+            v-for="(item, tabIndex) in cityListKey"
             :key="tabIndex"
             :tab="item"
           >
-            <div v-for="(item2,groupIndex) in tabDatas[tabIndex]" :key="groupIndex">
-              <div class="lable">{{item2.ckey}}</div>
+            <div
+              v-for="(item2, groupIndex) in tabDatas[tabIndex]"
+              :key="groupIndex"
+            >
+              <div class="lable">{{ item2.ckey }}</div>
               <div class="checkbox_panel">
                 <template v-if="multiple">
                   <a-checkbox
                     class="check_item"
-                    v-for="(item3,index) in item2.cityList"
+                    v-for="(item3, index) in item2.cityList"
                     :key="index"
                     :checked="item3.checked"
-                    @change.stop="checkBoxChanged({tabIndex,groupIndex,index,$event})"
-                  >{{item3.name}}</a-checkbox>
+                    @change.stop="
+                      checkBoxChanged({ tabIndex, groupIndex, index, $event })
+                    "
+                    >{{ item3.name }}</a-checkbox
+                  >
                 </template>
                 <template v-else>
                   <label
                     class="label_item"
-                    v-for="(item3,index) in item2.cityList"
+                    v-for="(item3, index) in item2.cityList"
                     :key="index"
-                    @click.stop="checkBoxChanged({tabIndex,groupIndex,index,$event})"
-                  >{{item3.name}}</label>
+                    @click.stop="
+                      checkBoxChanged({ tabIndex, groupIndex, index, $event })
+                    "
+                    >{{ item3.name }}</label
+                  >
                 </template>
               </div>
             </div>
@@ -95,15 +113,15 @@ export default {
       checkedList: [], // 当前选定的checkBox
       searching: false, // 是否处于搜索状态
       searchDatas: [], // 查找到的数据
-      searchText: "", // 查找内容
+      searchText: "" // 查找内容
     };
   },
   props: {
     multiple: {
       // 多选
       type: Boolean,
-      default: false,
-    },
+      default: false
+    }
   },
   methods: {
     cityexpand() {
@@ -124,14 +142,14 @@ export default {
     },
     loadDatas() {
       let cityDatas = {};
-      citys.map((item) => {
+      citys.map(item => {
         const key = item.pinyin.charAt(0).toUpperCase(); // 根据key值的第一个字母分组，并且转换成大写
         const dictValue = cityDatas[key] || []; // 如果tabDatas里面有这个key了，就取，没有就是空数组
         dictValue.push({
           // 增加数组内容
           label: item.label,
           name: item.name,
-          checked: false,
+          checked: false
         });
 
         cityDatas[key] = dictValue;
@@ -142,7 +160,7 @@ export default {
       for (let gkey in cityDatas) {
         list.push({
           ckey: gkey,
-          cityList: cityDatas[gkey],
+          cityList: cityDatas[gkey]
         });
       }
 
@@ -159,9 +177,9 @@ export default {
 
       // 取得分组标题
       let cityListKey = [];
-      this.tabDatas.map((item) => {
+      this.tabDatas.map(item => {
         let ckeys = "";
-        item.map((childItem) => {
+        item.map(childItem => {
           ckeys += childItem.ckey;
         });
 
@@ -175,7 +193,7 @@ export default {
       console.log(e);
       const { tabIndex, groupIndex, index, $event: event } = e;
 
-      console.log(event)
+      console.log(event);
 
       this.changeCheckedStatus(
         tabIndex,
@@ -183,6 +201,10 @@ export default {
         index,
         this.multiple ? event.target.checked : true
       );
+
+      if (!this.multiple) {
+        this.isexpand = false;
+      }
     },
 
     tagClose(e) {
@@ -203,16 +225,16 @@ export default {
           name: item.name,
           tabIndex,
           groupIndex,
-          index,
+          index
         });
       } else {
-        let index = this.checkedList.findIndex((obj) => obj.name === item.name);
+        let index = this.checkedList.findIndex(obj => obj.name === item.name);
         this.checkedList.splice(index, 1);
       }
 
       this.$emit(
         "cityChanged",
-        this.checkedList.map((item) => item.name)
+        this.checkedList.map(item => item.name)
       );
     },
 
@@ -233,21 +255,21 @@ export default {
             });
 
             this.searchDatas = datas.filter(
-              (city) => city.label.indexOf(this.searchText) != -1
+              city => city.label.indexOf(this.searchText) != -1
             );
           });
         });
 
         this.searching = true;
-        console.log(this.searchDatas);
       }
-    },
-  },
+    }
+  }
 };
 </script>
 
 <style lang="less">
 .main_layout {
+  position: relative;
   .input_layout {
     border: 1px solid #d9d9d9;
     border-radius: 4px;
@@ -272,8 +294,9 @@ export default {
   }
 
   .tabs_layout {
+    position: absolute;
     width: 100%;
-    float: left;
+    // float: left;
     background-color: white;
     outline: 0;
     box-shadow: 0 0 4px 0 rgba(117, 117, 117, 0.5);
@@ -281,7 +304,7 @@ export default {
     // 搜索
     .search_panel {
       overflow: auto;
-      height: 450px;
+      height: 30vh;
       width: 100%;
       margin: 0 8px;
 
@@ -309,10 +332,14 @@ export default {
       }
       .tab_panel {
         overflow: auto;
-        height: 450px;
+        height: 30vh;
         .lable {
           margin: 10px 0 0px 18px;
           font-size: 18px;
+          font-weight: 600;
+        }
+        .divider {
+          margin: 8px 0;
         }
 
         .checkbox_panel {
