@@ -47,9 +47,7 @@
               class="search_label_item"
               v-for="(item, index) in this.searchDatas"
               :key="index"
-              @click.stop="checkBoxChanged(item)"
-              >{{ item.name }}</label
-            >
+              @click.stop="checkBoxChanged(item)">{{ item.name }}</label>
           </template>
         </div>
       </template>
@@ -74,10 +72,7 @@
                     v-for="(item3, index) in item2.cityList"
                     :key="index"
                     :checked="item3.checked"
-                    @change.stop="
-                      checkBoxChanged({ tabIndex, groupIndex, index, $event })
-                    "
-                    >{{ item3.name }}</a-checkbox
+                    @change.stop="checkBoxChanged({ tabIndex, groupIndex, index, $event })">{{ item3.name }}</a-checkbox
                   >
                 </template>
                 <template v-else>
@@ -101,11 +96,11 @@
 </template>
 
 <script>
-import citys from "@/assets/citys.json";
-import untils from "@/untils/common.js";
+import citys from '@/assets/citys.json'
+import untils from '@/untils/common.js'
 
 export default {
-  data() {
+  data () {
     return {
       isexpand: false,
       tabDatas: [], // 分组后的数据
@@ -113,112 +108,193 @@ export default {
       checkedList: [], // 当前选定的checkBox
       searching: false, // 是否处于搜索状态
       searchDatas: [], // 查找到的数据
-      searchText: "" // 查找内容
-    };
+      searchText: '', // 查找内容
+      allCityList: [] // 单个数据，对象内有它所在的下标路径
+    }
   },
   props: {
     multiple: {
       // 多选
       type: Boolean,
       default: false
+    },
+    values: {
+      // 双向绑定
+      type: Array,
+      default: function () {
+        return []
+      }
+    }
+  },
+  model: {
+    prop: 'values',
+    event: 'citychanged'
+  },
+  created () {
+    if (Object.entries(this.tabDatas).length === 0) {
+      console.log('this.loadDatas()')
+      this.loadDatas()
+    }
+  },
+  mounted () {
+    // 挂载完成时，如果需要初始化就进行初始化
+    if (this.values.length > 0) {
+      this.updateValues(this.values)
+    }
+  },
+  watch: {
+    values: function (newVal) {
+      this.updateValues(newVal)
     }
   },
   methods: {
-    cityexpand() {
+    cityexpand () {
       if (!this.isexpand) {
-        this.isexpand = true;
+        this.isexpand = true
 
-        if (Object.entries(this.tabDatas) == 0) {
-          this.loadDatas();
+        if (Object.entries(this.tabDatas) === 0) {
+          this.loadDatas()
         }
       }
     },
-    cityup(e) {
+    cityup (e) {
       if (this.isexpand) {
         if (!untils.isParent(e.relatedTarget, this.$refs.tabs_layout)) {
-          this.isexpand = false;
+          this.isexpand = false
         }
       }
     },
-    loadDatas() {
-      let cityDatas = {};
+    loadDatas () {
+      const cityDatas = {}
       citys.map(item => {
-        const key = item.pinyin.charAt(0).toUpperCase(); // 根据key值的第一个字母分组，并且转换成大写
-        const dictValue = cityDatas[key] || []; // 如果tabDatas里面有这个key了，就取，没有就是空数组
+        const key = item.pinyin.charAt(0).toUpperCase() // 根据key值的第一个字母分组，并且转换成大写
+        const dictValue = cityDatas[key] || [] // 如果tabDatas里面有这个key了，就取，没有就是空数组
         dictValue.push({
           // 增加数组内容
           label: item.label,
           name: item.name,
           checked: false
-        });
+        })
 
-        cityDatas[key] = dictValue;
-      });
+        cityDatas[key] = dictValue
+      })
 
       // 转成对象数组
-      let list = [];
-      for (let gkey in cityDatas) {
+      let list = []
+      for (const gkey in cityDatas) {
         list.push({
           ckey: gkey,
           cityList: cityDatas[gkey]
-        });
+        })
       }
 
       // 排序(根据ASCII码)
       list = list.sort(
         (item1, item2) => item1.ckey.charCodeAt(0) - item2.ckey.charCodeAt(0)
-      );
+      )
 
       // 4个字母一组
-      let chunk = 4;
+      const chunk = 4
       for (var i = 0, j = list.length; i < j; i += chunk) {
-        this.tabDatas.push(list.slice(i, i + chunk));
+        this.tabDatas.push(list.slice(i, i + chunk))
       }
 
       // 取得分组标题
-      let cityListKey = [];
+      const cityListKey = []
       this.tabDatas.map(item => {
-        let ckeys = "";
+        let ckeys = ''
         item.map(childItem => {
-          ckeys += childItem.ckey;
-        });
+          ckeys += childItem.ckey
+        })
 
-        cityListKey.push(ckeys);
-      });
+        cityListKey.push(ckeys)
+      })
 
-      this.cityListKey = cityListKey;
+      this.cityListKey = cityListKey
+
+      // 所有对象全部放在一个数组中，里面有下标的路径
+      this.tabDatas.forEach((item, index) => {
+        item.forEach((item2, index2) => {
+          item2.cityList.forEach((item3, index3) => {
+            const newItem = item3
+            newItem.tabIndex = index
+            newItem.groupIndex = index2
+            newItem.index = index3
+            this.allCityList.push(newItem)
+          })
+        })
+      })
+    },
+    updateValues(newVal){ // 初始化数据
+      // 去重
+      const unique = []
+      newVal.forEach(item => {
+        if (unique.indexOf(item) === -1) {
+          unique.push(item)
+        }
+      })
+
+      // 先勾选掉不再存在的数组
+      this.checkedList.forEach((item) => {
+        if (unique.indexOf(item.name) !== -1) {
+          const checkbox = this.tabDatas[item.tabIndex][item.groupIndex]
+            .cityList[item.index]
+          checkbox.checked = false
+          // this.checkedList.splice(index, 1);
+        }
+      })
+
+      this.checkedList = []
+
+      unique.forEach(name => {
+        const index = this.allCityList.findIndex(item => item.name === name)
+        if (index !== -1) {
+          const item = this.allCityList[index]
+          // 更改选中状态
+          this.changeCheckedStatus(
+            item.tabIndex,
+            item.groupIndex,
+            item.index,
+            true,
+            true
+          )
+        }
+      })
     },
 
-    checkBoxChanged(e) {
-      console.log(e);
-      const { tabIndex, groupIndex, index, $event: event } = e;
-
-      console.log(event);
+    checkBoxChanged (e) {
+      const { tabIndex, groupIndex, index, $event: event } = e
 
       this.changeCheckedStatus(
         tabIndex,
         groupIndex,
         index,
         this.multiple ? event.target.checked : true
-      );
+      )
 
       if (!this.multiple) {
-        this.isexpand = false;
+        this.isexpand = false
       }
     },
 
-    tagClose(e) {
-      const { tabIndex, groupIndex, index } = e;
-      this.changeCheckedStatus(tabIndex, groupIndex, index, false);
+    tagClose (e) {
+      const { tabIndex, groupIndex, index } = e
+      this.changeCheckedStatus(tabIndex, groupIndex, index, false)
     },
 
-    changeCheckedStatus(tabIndex, groupIndex, index, checked) {
-      let item = this.tabDatas[tabIndex][groupIndex].cityList[index];
-      item.checked = checked;
+    changeCheckedStatus (
+      tabIndex,
+      groupIndex,
+      index,
+      checked,
+      forbidEmit = false
+    ) {
+      const item = this.tabDatas[tabIndex][groupIndex].cityList[index]
+      item.checked = checked
 
       if (item.checked) {
         if (!this.multiple) {
-          this.checkedList = [];
+          this.checkedList = []
         }
 
         this.checkedList.push({
@@ -226,45 +302,56 @@ export default {
           tabIndex,
           groupIndex,
           index
-        });
+        })
       } else {
-        let index = this.checkedList.findIndex(obj => obj.name === item.name);
-        this.checkedList.splice(index, 1);
+        const index = this.checkedList.findIndex(obj => obj.name === item.name)
+        this.checkedList.splice(index, 1)
       }
 
-      this.$emit(
-        "cityChanged",
-        this.checkedList.map(item => item.name)
-      );
+      // this.$emit(
+      //   "cityChanged",
+      //   this.checkedList.map(item => item.name)
+      // );
+
+      if (!forbidEmit) {
+        this.citychanged()
+      }
+    },
+    citychanged () {
+      this.$emit('citychanged', this.checkedList.map(item => item.name))
     },
 
-    search(e) {
-      if (this.searchText == "") {
-        this.searching = false;
+    search() {
+      if (this.searchText === '') {
+        this.searching = false
       } else {
-        this.searchDatas = [];
-        let datas = [];
-        this.tabDatas.forEach((item, index) => {
-          item.forEach((item2, index2) => {
-            item2.cityList.forEach((item3, index3) => {
-              let newItem = item3;
-              newItem.tabIndex = index;
-              newItem.groupIndex = index2;
-              newItem.index = index3;
-              datas.push(newItem);
-            });
+        this.searchDatas = []
+        // const datas = []
+        // this.tabDatas.forEach((item, index) => {
+        //   item.forEach((item2, index2) => {
+        //     item2.cityList.forEach((item3, index3) => {
+        //       const newItem = item3
+        //       newItem.tabIndex = index
+        //       newItem.groupIndex = index2
+        //       newItem.index = index3
+        //       datas.push(newItem)
+        //     })
 
-            this.searchDatas = datas.filter(
-              city => city.label.indexOf(this.searchText) != -1
-            );
-          });
-        });
+        //     this.searchDatas = datas.filter(
+        //       city => city.label.indexOf(this.searchText) !== -1
+        //     )
+        //   })
+        // })
 
-        this.searching = true;
+        this.searchDatas = this.allCityList.filter(
+          city => city.label.indexOf(this.searchText) !== -1
+        )
+
+        this.searching = true
       }
     }
   }
-};
+}
 </script>
 
 <style lang="less">
@@ -296,6 +383,7 @@ export default {
   .tabs_layout {
     position: absolute;
     width: 100%;
+    z-index: 99;
     // float: left;
     background-color: white;
     outline: 0;
